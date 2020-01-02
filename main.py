@@ -117,6 +117,7 @@ menuBar.add_cascade(label='Edit', menu=editMenu)
 
 # 同样的在 Edit 中加入Roberts operator等小命令功能单元，如果点击这些单元, 就会触发do_job的功能
 editMenu.add_command(label='Edit one image', command=main)
+# editing files automatically one by one
 editMenu.add_command(label='Edit images...', command=edit_images)
 
 # 创建菜单栏完成后，配置让菜单栏menubar显示出来
