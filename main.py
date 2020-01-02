@@ -12,6 +12,7 @@ import label
 # init the global variable
 imageLable = None
 imagePath = ''
+imagePathList = []
 img_list = [
     "./image/test11.jpg",
     "./image/test12.jpg",
@@ -33,6 +34,15 @@ def fit_size(imageSize):
     else:
         return windowSize[0], int(height)
 
+
+def edit_images():
+    fileNames = tkinter.filedialog.askopenfilenames()
+    fileNamesList = list(fileNames)
+    global imagePathList
+    imagePathList = fileNamesList
+    for i in imagePathList:
+        print(i)
+        label.oneFile(i)
 
 # open_image: open photo from file dialog and show on the screen
 def open_image():
@@ -58,7 +68,7 @@ def main():
     # label.oneDir('./demo')
     outputPath = imagePath + 'dir/output.jpg'
     output = cv2.imread(outputPath, 1)
-    ''' 另一种展示图片的方式，把现68-71注释掉，把这一段注释删掉就ok了
+    ''' 另一种展示图片的方式
     cv2.namedWindow('output', cv2.WINDOW_NORMAL)
     cv2.resizeWindow('output', 1000, 1000)
     cv2.imshow('output', output)  # 展示图片，arg1：弹出form窗口的名称。arg2：图片
@@ -66,18 +76,13 @@ def main():
     cv2.destoryAllWindows()
     '''
     img_2 = output[:, :, [2, 1, 0]]
-    fig = plt.figure(figsize=(12, 8))
+    plt.figure(figsize=(12, 8))
     plt.imshow(img_2), plt.axis('off')
     plt.show()
-    ''' 另一种展示图片的方式，把现68-71注释掉，把这一段注释删掉就ok了
+    ''' 另一种展示图片的方式
     im = Image.open(outputPath)
     im.show()
     '''
-
-
-
-def do_job():
-    print('do jobs!')
 
 
 def settings():
@@ -112,7 +117,8 @@ editMenu = tk.Menu(menuBar, tearoff=0)
 menuBar.add_cascade(label='Edit', menu=editMenu)
 
 # 同样的在 Edit 中加入Roberts operator等小命令功能单元，如果点击这些单元, 就会触发do_job的功能
-editMenu.add_command(label='run', command=main)
+editMenu.add_command(label='Edit one image', command=main)
+editMenu.add_command(label='Edit images...', command=edit_images)
 
 # 创建菜单栏完成后，配置让菜单栏menubar显示出来
 window.config(menu=menuBar)
