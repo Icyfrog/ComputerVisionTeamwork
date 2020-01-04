@@ -12,17 +12,21 @@ import numpy as np
 # param2：cv2.HOUGH_GRADIENT方法的累加器阈值。阈值越小，检测到的圈子越多。
 # minRadius：最小半径
 # maxRadius：最大半径
+criticalRate = 0.6
+diffDistanceRate = 0.28
+distanceRate = 0.2
+
 
 criticalRate = 0.2
 minDistRate = 1.0
 maxRadiusRate = 0.7
-cutRate = 0.05
+cutRate = 0.2
 
 def findOneCircle(oriImg):
     img = copy.deepcopy(oriImg)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1,
-                           int(minDistRate/2* (oriImg.shape[0]+oriImg.shape[1])), param1=200, param2=10,
+                           int(minDistRate/2* (oriImg.shape[0]+oriImg.shape[1])), param1=200, param2=25,
                            minRadius=10, maxRadius = int(maxRadiusRate/2* (oriImg.shape[0]+oriImg.shape[1])))
 
     if ( type(circles)==type(np.ones((1,1))) ):
@@ -44,7 +48,7 @@ def cut(oriImg, circle):
     r = int(circle[2])
 
     # width,height = int(circle[0]),int(circle[1])
-    centerX, centerY = int(circle[0]), int(circle[1])
+    centerY, centerX = int(circle[0]), int(circle[1])
 
     for x in range(len(img)):
         for y in range(len(img[0])):
@@ -61,35 +65,63 @@ def checkCircle(circle):
         return True
     return False
 
-def checkFace(filename):
-    img1 = cv2.imread(filename)
-    res1, circle1 = findOneCircle(img1)
+def distance(center1,center2):
+    return (center1[0]-center2[0])**2 + (center1[1]-center2[1])**2
 
-    # cv2.imshow('res1', res1)
-    if(not(checkCircle(circle1))):
-        return False
 
-    img2 = copy.deepcopy(res1)
-    img2 = cut(img2, circle1)
-    res2, circle2 = findOneCircle(img2)
-
-    # cv2.imshow('res2', res2)
-    if(not(checkCircle(circle2))):
-        return False
-
-    img3 = copy.deepcopy(res2)
-    img3 = cut(img3, circle2)
-    res3, circle3 = findOneCircle(img3)
-
-    # cv2.imshow('res3', res3)
-    if(not(checkCircle(circle3))):
-        return False
-
-    r = int(circle3[2])
-    if(r > criticalRate* (img1.shape[0]+img1.shape[1])/2):
+def check(img,circle):
+    centerX,centerY,R = int(circle[0]),int(circle[1]),int(circle[2])
+    count = 0
+    for i in range(10):
+        x=int(centerX - R + R/5*i)
+        # print(img[centerX - R + int(R//10)*i][centerY])
+        if(img[x][centerY][2] == 255):
+            count = count + 1
+    for i in range(10):
+        y=int(centerY - R + R/5*i)
+        # print(img[centerX - R + int(R//10)*i][centerY])
+        if(img[centerX][y][2] == 255):
+            count = count + 1
+    print("count",count)
+    if(count>=7):
         return True
-    else:
-        return False
+    return False
+
+def checkFace(filename):
+    img = cv2.imread(filename)
+
+    img1 = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    # 膨胀，填充瓶盖轮廓内部空间成为一个连通区域
+
+    kernelsize = (3,3)
+    iterations = 3
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, kernelsize)
+    dilated = cv2.dilate(img1, kernel,1)
+    img1 = cv2.cvtColor(dilated, cv2.COLOR_GRAY2BGR)
+    res1,circle1 = findOneCircle(img1)
+
+    r1 = int(circle1[2])
+    center1 = (int(circle1[0]),int(circle1[1]))
+
+    global BASIC_R
+    BASIC_R = circle1[2]
+
+    res2,circle2 = res1,circle1
+
+    r2 = int(circle2[2])
+    center2 = (int(circle2[0]),int(circle2[1]))
+
+    if(check(res2,circle2)):
+        print (False)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
+        return False      
+
+    r2 = int(circle2[2])
+    center2 = (int(circle2[0]),int(circle2[1]))
+
+    return True
 
 # 找到所有符合条件的二进制图片，在这里就是正面和反面的图片
 def eachfile(filepath):
@@ -107,10 +139,13 @@ def eachfile(filepath):
 def checkFile(fp):
     filepaths = eachfile(fp)
     for filepath in filepaths:
+        print(filepath)
         result = checkFace(filepath)
+        print(result)
         newpath = ''
         if result:
-            newpath = filepath[:-9] + 'pos' + filepath[-4:]
-        else:
             newpath = filepath[:-9] + 'neg' + filepath[-4:]
+        else:
+            newpath = filepath[:-9] + 'pos' + filepath[-4:]
         os.rename(filepath, newpath)
+        

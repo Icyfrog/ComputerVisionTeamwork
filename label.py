@@ -17,12 +17,16 @@ def getIcon():
         images.append(cv2.imread(iconpath + '/' + file))
     return images
 
-def swap(height, width, src, mask):
+def swap(width, height, src, mask):
+    # print(src)
     output = copy.deepcopy(src)
-    x, y, _ = mask.shape
+    y, x, _ = mask.shape
+    # print(x,y,width,height,output.shape, src.shape)
+    if (y+height>=src.shape[0] or x+width>=src.shape[1]):
+        return
     for i in range(x):
-        for j in range(y):
-            output[width + i, height + j] = mask[i, j]
+        for j in range(y):   
+            output[height + j,width + i] = mask[j, i]
     return output
 
 def finalImage(dirpath):
@@ -30,18 +34,27 @@ def finalImage(dirpath):
     
     resultImagePath = dirpath + '/result.jpg'
     resultImage = cv2.imread(resultImagePath)
+    # print(resultImagePath)
 
-    files = os.listdir(dirpath)    
+    f = open(dirpath+"/record.txt", mode='a')
+
+    files = os.listdir(dirpath)
     for file in files:
-        if file == "result.jpg" or file == "output.jpg":
-            continue
         fileset = file.split('+')
-        if fileset[3] == 'pos.jpg':
+        # print(fileset, resultImage.shape)
+        if fileset[-1] == 'pos.jpg':
             resultImage = swap(int(fileset[1]), int(fileset[2]), resultImage, icon1)
-        elif fileset[3] == 'neg.jpg':
+            f.writelines("x: " + fileset[1] + ", y: " + fileset[2] + " 正面\n")
+        elif fileset[-1] == 'neg.jpg':
             resultImage = swap(int(fileset[1]), int(fileset[2]), resultImage, icon2)
-        elif fileset[3] == 'square.jpg':
+            f.writelines("x: " + fileset[1] + ", y: " + fileset[2] + " 反面\n")
+        elif fileset[-1] == 'square.jpg':
             resultImage = swap(int(fileset[1]), int(fileset[2]), resultImage, icon3)
+            f.writelines("x: " + fileset[1] + ", y: " + fileset[2] + " 侧面\n")
+        else:
+            continue
+
+    f.close()
 
     cv2.imwrite(dirpath + '/output.jpg', resultImage)
 

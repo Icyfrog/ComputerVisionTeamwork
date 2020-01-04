@@ -12,14 +12,6 @@ import label
 imageLable = None
 imagePath = ''
 imagePathList = []
-img_list = [
-    "./image/test11.jpg",
-    "./image/test12.jpg",
-    "./image/test31.jpg",
-    "./image/test34.jpg",
-    "./image/test35.jpg"
-]
-
 
 # fit_size: change the size of the picture to fit the window
 def fit_size(imageSize):
